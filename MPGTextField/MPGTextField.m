@@ -14,9 +14,6 @@
 UITableViewController *results;
 UITableViewController *tableViewController;
 
-//Private declaration of an internal user boolean variable - 'cleanup'. This is used to make sure that -layoutSubviews does not enter into an infinite loop.
-BOOL cleanup;
-
 //Private declaration of NSArray that will hold the data supplied by the user for showing results in search popover.
 NSArray *data;
 
@@ -25,7 +22,6 @@ NSArray *data;
     self = [super initWithFrame:frame];
     if (self) {
         // Initialization code
-        cleanup = NO;
     }
     return self;
 }
@@ -42,68 +38,64 @@ NSArray *data;
 - (void)layoutSubviews
 {
     [super layoutSubviews];
-    if (cleanup) {
-        cleanup = NO;
-        [self resignFirstResponder];
-        return;
-    }
     
     if (self.text.length > 0 && self.isFirstResponder) {
         //User entered some text in the textfield. Check if the delegate has implemented the required method of the protocol. Create a popover and show it around the MPGTextField.
         
         if ([self.delegate respondsToSelector:@selector(dataForPopoverInTextField:)]) {
-
-            if (![self.popover isPopoverVisible]) {
-                //Popover is not visible. Create an instance of the popover and present it to the user
-                results = [[UITableViewController alloc] init];
-                [results.tableView setDelegate:self];
-                [results.tableView setDataSource:self];
-                if(self.popoverSize.height == 0.0){
-                    //Popover size is not set. Default it to 300x500.
-                    [results setPreferredContentSize:CGSizeMake(300.0, 400.0)];
-                }
-                else{
-                    [results setPreferredContentSize:self.popoverSize];
-                }
-                [results.tableView setSeparatorColor:self.seperatorColor];
-                self.popover = [[UIPopoverController alloc] initWithContentViewController:results];
-                [self.popover setDelegate:self];
-                [self.popover presentPopoverFromRect:[self frame] inView:[self superview] permittedArrowDirections:UIPopoverArrowDirectionAny animated:YES];
-                data = [[self delegate] dataForPopoverInTextField:self];
-            }
-            //Filter the result set w/the text entered by the user and reload the table view.
-            [results.tableView reloadData];
+            data = [[self delegate] dataForPopoverInTextField:self];
+            [self provideSuggestions];
         }
         else{
             NSLog(@"<MPGTextField> WARNING: You have not implemented the requred methods of the MPGTextField protocol.");
         }
     }
     else{
-        //No text entered in the textfield. Check if popover is visible. If so, dismiss it. If mandatorySelection is enabled, select the first row from results.tableView and set the displayText on the text field..
-        if ([self.popover isPopoverVisible]) {
-            [self.popover dismissPopoverAnimated:YES];
-        }
-        if (!self.isFirstResponder) {
-            //Textfield is no longer in focus. -handleExit method checks for mandatory selection variable and handles the resignation of first responder accordingly.
-            [self handleExit];
+        //No text entered in the textfield. If -textFieldShouldSelect is YES, select the first row from results using -handleExit method.tableView and set the displayText on the text field. Check if suggestions view is visible and dismiss it.
+        if ([tableViewController.tableView superview] != nil) {
+            [tableViewController.tableView removeFromSuperview];
         }
     }
 }
 
+//Override UITextField -resignFirstResponder method to ensure the 'exit' is handled properly.
+- (BOOL)resignFirstResponder
+{
+    [UIView animateWithDuration:0.3
+                     animations:^{
+                         [tableViewController.tableView setAlpha:0.0];
+                     }
+                     completion:^(BOOL finished){
+                         [tableViewController.tableView removeFromSuperview];
+                         tableViewController = nil;
+                     }];
+    [self handleExit];
+    return [super resignFirstResponder];
+}
+
+//This method checks if a selection needs to be made from the suggestions box using the delegate method -textFieldShouldSelect. If a user doesn't tap any search suggestion, the textfield automatically selects the top result. If there is no result available and the delegate method is set to return YES, the textfield will wrap the entered the text in a NSDictionary and send it back to the delegate with 'CustomObject' key set to 'NEW'
 - (void)handleExit
 {
+    [tableViewController.tableView removeFromSuperview];
     if ([[self delegate] respondsToSelector:@selector(textFieldShouldSelect:)]) {
         if ([[self delegate] textFieldShouldSelect:self]) {
             if ([self applyFilterWithSearchQuery:self.text].count > 0) {
-                cleanup = YES;
                 self.text = [[[self applyFilterWithSearchQuery:self.text] objectAtIndex:0] objectForKey:@"DisplayText"];
-                [[self delegate] textField:self didEndEditingWithSelection:[[self applyFilterWithSearchQuery:self.text] objectAtIndex:0]];
+                if ([[self delegate] respondsToSelector:@selector(textField:didEndEditingWithSelection:)]) {
+                    [[self delegate] textField:self didEndEditingWithSelection:[[self applyFilterWithSearchQuery:self.text] objectAtIndex:0]];
+                }
+                else{
+                    NSLog(@"<MPGTextField> WARNING: You have not implemented a method from MPGTextFieldDelegate that is called back when the user selects a search suggestion.");
+                }
             }
             else if (self.text.length > 0){
                 //Make sure that delegate method is not called if no text is present in the text field.
-                cleanup = YES;
-                [[self delegate] textField:self didEndEditingWithSelection:[NSDictionary dictionaryWithObjectsAndKeys:self.text,@"DisplayText",@"NEW",@"CustomObject", nil]];
-                [self resignFirstResponder];
+                if ([[self delegate] respondsToSelector:@selector(textField:didEndEditingWithSelection:)]) {
+                    [[self delegate] textField:self didEndEditingWithSelection:[NSDictionary dictionaryWithObjectsAndKeys:self.text,@"DisplayText",@"NEW",@"CustomObject", nil]];
+                }
+                else{
+                    NSLog(@"<MPGTextField> WARNING: You have not implemented a method from MPGTextFieldDelegate that is called back when the user selects a search suggestion.");
+                }
             }
         }
     }
@@ -114,7 +106,18 @@ NSArray *data;
 
 -(NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
-    return [[self applyFilterWithSearchQuery:self.text] count];
+    int count = [[self applyFilterWithSearchQuery:self.text] count];
+    if (count == 0) {
+        [UIView animateWithDuration:0.3
+                         animations:^{
+                             [tableViewController.tableView setAlpha:0.0];
+                         }
+                         completion:^(BOOL finished){
+                             [tableViewController.tableView removeFromSuperview];
+                             tableViewController = nil;
+                         }];
+    }
+    return count;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -127,6 +130,7 @@ NSArray *data;
         cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:CellIdentifier];
     }
     
+    [cell setBackgroundColor:[UIColor clearColor]];
     [[cell textLabel] setText:[[[self applyFilterWithSearchQuery:self.text] objectAtIndex:indexPath.row] objectForKey:@"DisplayText"]];
     if ([[[self applyFilterWithSearchQuery:self.text] objectAtIndex:indexPath.row] objectForKey:@"DisplaySubText"] != nil) {
         [[cell detailTextLabel] setText:[[[self applyFilterWithSearchQuery:self.text] objectAtIndex:indexPath.row] objectForKey:@"DisplaySubText"]];
@@ -138,9 +142,7 @@ NSArray *data;
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
     self.text = [[[self applyFilterWithSearchQuery:self.text] objectAtIndex:indexPath.row] objectForKey:@"DisplayText"];
-    [self.popover dismissPopoverAnimated:YES];
-    cleanup = YES;
-    [self layoutSubviews];
+    [self resignFirstResponder];
 }
 
 #pragma mark Filter Method
@@ -152,12 +154,63 @@ NSArray *data;
     return filteredGoods;
 }
 
-#pragma mark Popover Delegate Method
+#pragma mark Popover Method(s)
 
-- (void)popoverControllerDidDismissPopover:(UIPopoverController *)popoverController
+- (void)provideSuggestions
 {
-    cleanup = YES;
-    [self layoutSubviews];
+    //Providing suggestions
+    if (tableViewController.tableView.superview == nil && [[self applyFilterWithSearchQuery:self.text] count] > 0) {
+        UITapGestureRecognizer *tapRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapped:)];
+        [tapRecognizer setNumberOfTapsRequired:1];
+        [tapRecognizer setCancelsTouchesInView:NO];
+        [tapRecognizer setDelegate:self];
+        [self.superview addGestureRecognizer:tapRecognizer];
+        
+        tableViewController = [[UITableViewController alloc] init];
+        [tableViewController.tableView setDelegate:self];
+        [tableViewController.tableView setDataSource:self];
+        if (self.backgroundColor == nil) {
+            //Background color has not been set by the user. Use default color instead.
+            [tableViewController.tableView setBackgroundColor:[UIColor colorWithRed:240.0/255.0 green:240.0/255.0 blue:240.0/255.0 alpha:1.0]];
+        }
+        else{
+            [tableViewController.tableView setBackgroundColor:self.backgroundColor];
+        }
+        
+        [tableViewController.tableView setSeparatorColor:self.seperatorColor];
+        if (self.popoverSize.size.height == 0.0) {
+            //PopoverSize frame has not been set. Use default parameters instead.
+            CGRect frameForPresentation = [self frame];
+            frameForPresentation.origin.y += self.frame.size.height;
+            frameForPresentation.size.height = 200;
+            [tableViewController.tableView setFrame:frameForPresentation];
+        }
+        else{
+            [tableViewController.tableView setFrame:self.popoverSize];
+        }
+        [[self superview] addSubview:tableViewController.tableView];
+        tableViewController.tableView.alpha = 0.0;
+        [UIView animateWithDuration:0.3
+                         animations:^{
+                             [tableViewController.tableView setAlpha:1.0];
+                         }
+                         completion:^(BOOL finished){
+                             
+                         }];
+        
+        
+    }
+    else{
+        [tableViewController.tableView reloadData];
+    }
+}
+
+- (void)tapped:(UIGestureRecognizer *)gesture
+{
+    if (!CGRectContainsPoint([[tableViewController tableView] frame], [gesture locationInView:self.superview])) {
+        //User tapped outside of the search suggestions view. Dismiss the search suggestions and handle the 'exit' appropriately.
+        [self resignFirstResponder];
+    }
 }
 
 

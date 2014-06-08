@@ -10,15 +10,15 @@
 
 @protocol MPGTextFieldDelegate;
 
-@interface MPGTextField : UITextField <UITableViewDelegate, UITableViewDataSource, UIPopoverControllerDelegate, UITextFieldDelegate>
+@interface MPGTextField : UITextField <UITableViewDelegate, UITableViewDataSource, UIPopoverControllerDelegate, UITextFieldDelegate, UIGestureRecognizerDelegate>
 
 @property (nonatomic, weak) id <MPGTextFieldDelegate, UITextFieldDelegate> delegate;
 
-//Popover to show results of 'auto-complete'. This will auto-update based on what the user enters in the textfield.
-@property (nonatomic, strong) UIPopoverController *popover;
+//Set this to override the default color of suggestions popover. The default color is [UIColor colorWithWhite:0.8 alpha:0.9]
+@property (nonatomic) UIColor *backgroundColor;
 
-//Set this to override the default size of the popover that will contain the results of the search query. The default size is 300x400.
-@property (nonatomic) CGSize popoverSize;
+//Set this to override the default frame of the suggestions popover that will contain the suggestions pertaining to the search query. The default frame will be of the same width as textfield, of height 200px and be just below the textfield.
+@property (nonatomic) CGRect popoverSize;
 
 //Set this to override the default seperator color for tableView in search results. The default color is light gray.
 @property (nonatomic) UIColor *seperatorColor;
