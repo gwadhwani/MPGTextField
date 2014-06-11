@@ -1,6 +1,5 @@
 //
 //  MPGTextField.h
-//  Racks
 //
 //  Created by Gaurav Wadhwani on 05/06/14.
 //  Copyright (c) 2014 Mappgic. All rights reserved.

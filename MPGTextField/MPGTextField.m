@@ -1,6 +1,5 @@
 //
 //  MPGTextField.m
-//  Racks
 //
 //  Created by Gaurav Wadhwani on 05/06/14.
 //  Copyright (c) 2014 Mappgic. All rights reserved.
@@ -130,10 +129,11 @@ NSArray *data;
         cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:CellIdentifier];
     }
     
+    NSDictionary *dataForRowAtIndexPath = [[self applyFilterWithSearchQuery:self.text] objectAtIndex:indexPath.row];
     [cell setBackgroundColor:[UIColor clearColor]];
-    [[cell textLabel] setText:[[[self applyFilterWithSearchQuery:self.text] objectAtIndex:indexPath.row] objectForKey:@"DisplayText"]];
-    if ([[[self applyFilterWithSearchQuery:self.text] objectAtIndex:indexPath.row] objectForKey:@"DisplaySubText"] != nil) {
-        [[cell detailTextLabel] setText:[[[self applyFilterWithSearchQuery:self.text] objectAtIndex:indexPath.row] objectForKey:@"DisplaySubText"]];
+    [[cell textLabel] setText:[dataForRowAtIndexPath objectForKey:@"DisplayText"]];
+    if ([dataForRowAtIndexPath objectForKey:@"DisplaySubText"] != nil) {
+        [[cell detailTextLabel] setText:[dataForRowAtIndexPath objectForKey:@"DisplaySubText"]];
     }
 
     return cell;
@@ -160,6 +160,7 @@ NSArray *data;
 {
     //Providing suggestions
     if (tableViewController.tableView.superview == nil && [[self applyFilterWithSearchQuery:self.text] count] > 0) {
+        //Add a tap gesture recogniser to dismiss the suggestions view when the user taps outside the suggestions view
         UITapGestureRecognizer *tapRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapped:)];
         [tapRecognizer setNumberOfTapsRequired:1];
         [tapRecognizer setCancelsTouchesInView:NO];
@@ -207,10 +208,7 @@ NSArray *data;
 
 - (void)tapped:(UIGestureRecognizer *)gesture
 {
-    if (!CGRectContainsPoint([[tableViewController tableView] frame], [gesture locationInView:self.superview])) {
-        //User tapped outside of the search suggestions view. Dismiss the search suggestions and handle the 'exit' appropriately.
-        [self resignFirstResponder];
-    }
+    
 }
 
 
