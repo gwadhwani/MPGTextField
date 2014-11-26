@@ -9,17 +9,17 @@
 import UIKit
 
 @objc protocol MPGTextFieldDelegate{
-    func dataForPopoverInTextField(textfield: MPGTextField_Swift) -> Dictionary<String, AnyObject>[]
+    func dataForPopoverInTextField(textfield: MPGTextField_Swift) -> [Dictionary<String, AnyObject>]
 
-    @optional func textFieldDidEndEditing(textField: MPGTextField_Swift, withSelection data: Dictionary<String,AnyObject>)
-    @optional func textFieldShouldSelect(textField: MPGTextField_Swift) -> Bool
+    optional func textFieldDidEndEditing(textField: MPGTextField_Swift, withSelection data: Dictionary<String,AnyObject>)
+    optional func textFieldShouldSelect(textField: MPGTextField_Swift) -> Bool
 }
 
 class MPGTextField_Swift: UITextField, UITextFieldDelegate, UITableViewDelegate, UITableViewDataSource, UIGestureRecognizerDelegate {
     
     var mDelegate : MPGTextFieldDelegate?
     var tableViewController : UITableViewController?
-    var data = Dictionary<String, AnyObject>[]()
+    var data = [Dictionary<String, AnyObject>]()
     
     //Set this to override the default color of suggestions popover. The default color is [UIColor colorWithWhite:0.8 alpha:0.9]
     @IBInspectable var popoverBackgroundColor : UIColor = UIColor(red: 240.0/255.0, green: 240.0/255.0, blue: 240.0/255.0, alpha: 1.0)
@@ -31,12 +31,12 @@ class MPGTextField_Swift: UITextField, UITextFieldDelegate, UITableViewDelegate,
     @IBInspectable var seperatorColor : UIColor = UIColor(white: 0.95, alpha: 1.0)
 
 
-    init(frame: CGRect) {
+    override init(frame: CGRect) {
         super.init(frame: frame)
         // Initialization code
     }
     
-    init(coder aDecoder: NSCoder!){
+    required init(coder aDecoder: NSCoder){
         super.init(coder: aDecoder)
     }
 
@@ -55,7 +55,7 @@ class MPGTextField_Swift: UITextField, UITextFieldDelegate, UITableViewDelegate,
         
         if (countElements(str) > 0) && (self.isFirstResponder())
         {
-            if mDelegate{
+            if mDelegate != nil {
                 data = mDelegate!.dataForPopoverInTextField(self)
                 self.provideSuggestions()
             }
@@ -97,7 +97,7 @@ class MPGTextField_Swift: UITextField, UITextFieldDelegate, UITableViewDelegate,
             tapRecognizer.numberOfTapsRequired = 1
             tapRecognizer.cancelsTouchesInView = false
             tapRecognizer.delegate = self
-            self.superview.addGestureRecognizer(tapRecognizer)
+            self.superview!.addGestureRecognizer(tapRecognizer)
 
             self.tableViewController = UITableViewController.alloc()
             self.tableViewController!.tableView.delegate = self
@@ -120,7 +120,7 @@ class MPGTextField_Swift: UITextField, UITextFieldDelegate, UITableViewDelegate,
             frameForPresentation.size.height = 200;
             tableViewController!.tableView.frame = frameForPresentation
             
-            self.superview.addSubview(tableViewController!.tableView)
+            self.superview!.addSubview(tableViewController!.tableView)
             self.tableViewController!.tableView.alpha = 0.0
             UIView.animateWithDuration(0.3,
                 animations: ({
@@ -142,7 +142,7 @@ class MPGTextField_Swift: UITextField, UITextFieldDelegate, UITableViewDelegate,
         }
     }
     
-    func tableView(tableView: UITableView!, numberOfRowsInSection section: Int) -> Int{
+    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int{
         var count = self.applyFilterWithSearchQuery(self.text).count
         if count == 0{
             UIView.animateWithDuration(0.3,
@@ -163,7 +163,7 @@ class MPGTextField_Swift: UITextField, UITextFieldDelegate, UITableViewDelegate,
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
         var cell = tableView.dequeueReusableCellWithIdentifier("MPGResultsCell") as? UITableViewCell
         
-        if !cell{
+        if cell == nil {
             cell = UITableViewCell(style: UITableViewCellStyle.Subtitle, reuseIdentifier: "MPGResultsCell")
         }
 
@@ -171,8 +171,8 @@ class MPGTextField_Swift: UITextField, UITextFieldDelegate, UITableViewDelegate,
         let dataForRowAtIndexPath = self.applyFilterWithSearchQuery(self.text)[indexPath.row]
         let displayText : AnyObject? = dataForRowAtIndexPath["DisplayText"]
         let displaySubText : AnyObject? = dataForRowAtIndexPath["DisplaySubText"]
-        cell!.textLabel.text = displayText as String
-        cell!.detailTextLabel.text = displaySubText as String
+        cell!.textLabel.text = displayText as? String
+        cell!.detailTextLabel!.text = displaySubText as? String
         
         return cell!
     }
@@ -185,7 +185,7 @@ class MPGTextField_Swift: UITextField, UITextFieldDelegate, UITableViewDelegate,
     
 //   #pragma mark Filter Method
     
-    func applyFilterWithSearchQuery(filter : String) -> Dictionary<String, AnyObject>[]
+    func applyFilterWithSearchQuery(filter : String) -> [Dictionary<String, AnyObject>]
     {
         //let predicate = NSPredicate(format: "DisplayText BEGINSWITH[cd] \(filter)")
         var lower = (filter as NSString).lowercaseString
@@ -205,7 +205,7 @@ class MPGTextField_Swift: UITextField, UITextFieldDelegate, UITableViewDelegate,
         if let table = self.tableViewController{
             table.tableView.removeFromSuperview()
         }
-        if mDelegate?.textFieldShouldSelect?(self){
+        if mDelegate!.textFieldShouldSelect!(self){
             if self.applyFilterWithSearchQuery(self.text).count > 0 {
                 let selectedData = self.applyFilterWithSearchQuery(self.text)[0]
                 let displayText : AnyObject? = selectedData["DisplayText"]
