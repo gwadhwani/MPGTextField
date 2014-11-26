@@ -10,14 +10,14 @@ import UIKit
 
 class ViewController: UIViewController, MPGTextFieldDelegate {
     
-    var sampleData = Dictionary<String, AnyObject>[]()
-    @IBOutlet var name : MPGTextField_Swift
+    var sampleData = [Dictionary<String, AnyObject>]()
+    @IBOutlet var name: MPGTextField_Swift?
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         self.generateData()
-        name.mDelegate = self
+        name!.mDelegate = self
     }
 
     override func didReceiveMemoryWarning() {
@@ -26,24 +26,31 @@ class ViewController: UIViewController, MPGTextFieldDelegate {
     }
     
     func generateData(){
-        var err : NSErrorPointer?
-        var dataPath = NSBundle.mainBundle().pathForResource("sample_data", ofType: "json")
-        var data = NSData.dataWithContentsOfFile(dataPath, options: NSDataReadingOptions.DataReadingUncached, error: err!)
-        var contents : AnyObject[]! = NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions.AllowFragments, error: err!) as AnyObject[]
-        //println(contents[0]["first_name"])
-        for var i = 0;i<contents.count;++i{
-            var name = contents[i]["first_name"] as String
-            var lName = contents[i]["last_name"] as String
-            name += " " + lName
-            var email = contents[i]["email"] as String
-            var dictionary = ["DisplayText":name,"DisplaySubText":email,"CustomObject":contents[i]]
-        
-            sampleData.append(dictionary)
+        let priority = DISPATCH_QUEUE_PRIORITY_DEFAULT
+        dispatch_async(dispatch_get_global_queue(priority, 0)) {
+            var err: NSErrorPointer = NSErrorPointer()
+            var dataPath = NSBundle.mainBundle().pathForResource("sample_data", ofType: "json")
+            var data = NSData(contentsOfFile:dataPath!, options:NSDataReadingOptions.DataReadingUncached, error:err)
+            
+            var contents: [AnyObject]! = NSJSONSerialization.JSONObjectWithData(data!,
+                options: NSJSONReadingOptions.AllowFragments,
+                error: err) as [AnyObject]
+            
+            dispatch_async(dispatch_get_main_queue()) {
+                for item in contents {
+                    var name = item["first_name"] as String
+                    var lName = item["last_name"] as String
+                    name += " " + lName
+                    var email = item["email"] as String
+                    var dictionary = ["DisplayText":name, "DisplaySubText":email, "CustomObject":item]
+                        
+                    self.sampleData.append(dictionary)
+                }
             }
-
+        }
     }
 
-    func dataForPopoverInTextField(textfield: MPGTextField_Swift) -> Dictionary<String, AnyObject>[]
+    func dataForPopoverInTextField(textfield: MPGTextField_Swift) -> [Dictionary<String, AnyObject>]
     {
         return sampleData
     }
