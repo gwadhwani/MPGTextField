@@ -60,7 +60,7 @@ class MPGTextField_Swift: UITextField, UITextFieldDelegate, UITableViewDelegate,
                 self.provideSuggestions()
             }
             else{
-                println("<MPGTextField> WARNING: You have not implemented the requred methods of the MPGTextField protocol.")
+                println("<MPGTextField> WARNING: You have not implemented the required methods of the MPGTextField protocol.")
             }
         }
         else{
