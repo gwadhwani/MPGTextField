@@ -159,6 +159,8 @@
 		0ACD2D491944D84D005AF774 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				LastSwiftMigration = 0710;
+				LastSwiftUpdateCheck = 0710;
 				LastUpgradeCheck = 0600;
 				ORGANIZATIONNAME = Mappgic;
 				TargetAttributes = {
