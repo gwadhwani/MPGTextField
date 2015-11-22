@@ -57,3 +57,18 @@ class ViewController: UIViewController, MPGTextFieldDelegate {
     }
 }
 
+extension ViewController : UITableViewDataSource {
+    
+    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return 10;
+    }
+    
+    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCellWithIdentifier("cell", forIndexPath: indexPath)
+        let mpgTextField = cell.viewWithTag(420) as! MPGTextField_Swift
+        mpgTextField.mDelegate = self;
+        
+        return cell
+    }
+}
+
