@@ -197,7 +197,7 @@ class MPGTextField_Swift: UITextField, UITextFieldDelegate, UITableViewDelegate,
     }
     
     func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath){
-        //self.text = self.applyFilterWithSearchQuery(self.text)[indexPath.row]["DisplayText"]
+        self.text = self.applyFilterWithSearchQuery(self.text!)[indexPath.row]["DisplayText"] as? String
         self.resignFirstResponder()
     }
     
