@@ -126,7 +126,20 @@ class MPGTextField_Swift: UITextField, UITextFieldDelegate, UITableViewDelegate,
             frameForPresentation.size.height = 200;
             tableViewController!.tableView.frame = frameForPresentation
             
-            self.superview!.addSubview(tableViewController!.tableView)
+            //BUG FIX - SHOW ON TOP
+            
+            //self.superview!.addSubview(tableViewController!.tableView)
+            
+            let aView = tableViewController!.tableView
+            var frame = aView.frame
+            
+            frame.origin = self.superview!.convertPoint(frame.origin, toView: nil)
+            aView.frame = frame
+            
+            self.window!.addSubview(aView)
+            
+            ////
+            
             self.tableViewController!.tableView.alpha = 0.0
             UIView.animateWithDuration(0.3,
                 animations: ({
