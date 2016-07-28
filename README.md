@@ -1,6 +1,8 @@
 MPGTextField
 =========
 
+Modified this project for this question: [Swift MPGTextField autocomplete in tableview cell](http://stackoverflow.com/q/33692207/1378447)
+
 <p align="center"><img src = "https://dl.dropboxusercontent.com/u/90817764/MPGTextField.png" width=320  height = 568 align="center"></p>
 
 An autocomplete textfield for iOS which provides suggestions as you type. The textfield can be configured to ensure that a selection is compulsorily made from the list of suggestions and gives you control over the size of the popover showing suggestions based on the text entered by the user.

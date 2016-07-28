@@ -10,14 +10,14 @@ import UIKit
 
 class ViewController: UIViewController, MPGTextFieldDelegate {
     
-    var sampleData = Dictionary<String, AnyObject>[]()
-    @IBOutlet var name : MPGTextField_Swift
+    var sampleData = [Dictionary<String, AnyObject>]()
+    @IBOutlet var name : MPGTextField_Swift?
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         self.generateData()
-        name.mDelegate = self
+        name!.mDelegate = self
     }
 
     override func didReceiveMemoryWarning() {
@@ -26,24 +26,24 @@ class ViewController: UIViewController, MPGTextFieldDelegate {
     }
     
     func generateData(){
-        var err : NSErrorPointer?
-        var dataPath = NSBundle.mainBundle().pathForResource("sample_data", ofType: "json")
-        var data = NSData.dataWithContentsOfFile(dataPath, options: NSDataReadingOptions.DataReadingUncached, error: err!)
-        var contents : AnyObject[]! = NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions.AllowFragments, error: err!) as AnyObject[]
+        //var err : NSErrorPointer?
+        let dataPath = NSBundle.mainBundle().pathForResource("sample_data", ofType: "json")
+        let data = try? NSData(contentsOfFile: dataPath!, options: .DataReadingUncached)
+        var contents : [AnyObject]! = try? NSJSONSerialization.JSONObjectWithData(data!, options: NSJSONReadingOptions.AllowFragments) as! [AnyObject]
         //println(contents[0]["first_name"])
         for var i = 0;i<contents.count;++i{
-            var name = contents[i]["first_name"] as String
-            var lName = contents[i]["last_name"] as String
+            var name = contents[i]["first_name"] as! String
+            let lName = contents[i]["last_name"] as! String
             name += " " + lName
-            var email = contents[i]["email"] as String
-            var dictionary = ["DisplayText":name,"DisplaySubText":email,"CustomObject":contents[i]]
+            let email = contents[i]["email"] as! String
+            let dictionary = ["DisplayText":name,"DisplaySubText":email,"CustomObject":contents[i]]
         
             sampleData.append(dictionary)
             }
 
     }
 
-    func dataForPopoverInTextField(textfield: MPGTextField_Swift) -> Dictionary<String, AnyObject>[]
+    func dataForPopoverInTextField(textfield: MPGTextField_Swift) -> [Dictionary<String, AnyObject>]
     {
         return sampleData
     }
@@ -53,7 +53,22 @@ class ViewController: UIViewController, MPGTextFieldDelegate {
     }
 
     func textFieldDidEndEditing(textField: MPGTextField_Swift, withSelection data: Dictionary<String,AnyObject>){
-        println("Dictionary received = \(data)")
+        print("Dictionary received = \(data)")
+    }
+}
+
+extension ViewController : UITableViewDataSource {
+    
+    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return 10;
+    }
+    
+    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCellWithIdentifier("cell", forIndexPath: indexPath)
+        let mpgTextField = cell.viewWithTag(420) as! MPGTextField_Swift
+        mpgTextField.mDelegate = self;
+        
+        return cell
     }
 }
 
